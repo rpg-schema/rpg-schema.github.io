@@ -7,7 +7,7 @@ import { componentTagger } from "lovable-tagger";
 // Set base to your repo name for GitHub Pages (e.g., '/rpg-schema/')
 // Or use '/' for custom domains
 export default defineConfig(({ mode }) => ({
-  base: process.env.GITHUB_PAGES === 'true' ? '/rpg-schema/' : '/',
+  base: '/',
   server: {
     host: "::",
     port: 8080,
