@@ -1,0 +1,534 @@
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix rpg: <https://rpg-schema.org/> .
+@prefix schema: <https://schema.org/> .
+
+# ============================================
+# RPG-Schema.org Ontology
+# A structured vocabulary for roleplaying games
+# ============================================
+
+rpg: a owl:Ontology ;
+    rdfs:label "RPG-Schema.org" ;
+    rdfs:comment "A structured vocabulary for describing roleplaying game content, enabling interoperability between Virtual Tabletops and game tools." .
+
+# ============================================
+# Core Types (Classes)
+# ============================================
+
+rpg:Thing a rdfs:Class ;
+    rdfs:label "Thing" ;
+    rdfs:comment "The most generic type of item in the RPG ontology." ;
+    rpg:icon "📦" .
+
+rpg:Character a rdfs:Class ;
+    rdfs:subClassOf rpg:Thing ;
+    rdfs:label "Character" ;
+    rdfs:comment "A player character or non-player character in a roleplaying game." ;
+    rpg:icon "🧙" .
+
+rpg:PlayerCharacter a rdfs:Class ;
+    rdfs:subClassOf rpg:Character ;
+    rdfs:label "PlayerCharacter" ;
+    rdfs:comment "A character controlled by a player." ;
+    rpg:icon "🧝" .
+
+rpg:NonPlayerCharacter a rdfs:Class ;
+    rdfs:subClassOf rpg:Character ;
+    rdfs:label "NonPlayerCharacter" ;
+    rdfs:comment "A character controlled by the game master." ;
+    rpg:icon "🧔" .
+
+rpg:Item a rdfs:Class ;
+    rdfs:subClassOf rpg:Thing ;
+    rdfs:label "Item" ;
+    rdfs:comment "A physical or magical object that can be used, worn, or carried." ;
+    rpg:icon "⚔️" .
+
+rpg:Weapon a rdfs:Class ;
+    rdfs:subClassOf rpg:Item ;
+    rdfs:label "Weapon" ;
+    rdfs:comment "An item designed for dealing damage in combat." ;
+    rpg:icon "🗡️" .
+
+rpg:Armor a rdfs:Class ;
+    rdfs:subClassOf rpg:Item ;
+    rdfs:label "Armor" ;
+    rdfs:comment "Protective equipment worn by characters." ;
+    rpg:icon "🛡️" .
+
+rpg:Potion a rdfs:Class ;
+    rdfs:subClassOf rpg:Item ;
+    rdfs:label "Potion" ;
+    rdfs:comment "A consumable liquid with magical or alchemical effects." ;
+    rpg:icon "🧪" .
+
+rpg:Scroll a rdfs:Class ;
+    rdfs:subClassOf rpg:Item ;
+    rdfs:label "Scroll" ;
+    rdfs:comment "A written document containing a spell or magical knowledge." ;
+    rpg:icon "📜" .
+
+rpg:WondrousItem a rdfs:Class ;
+    rdfs:subClassOf rpg:Item ;
+    rdfs:label "WondrousItem" ;
+    rdfs:comment "A magical item that doesn't fit other categories." ;
+    rpg:icon "💎" .
+
+rpg:Spell a rdfs:Class ;
+    rdfs:subClassOf rpg:Thing ;
+    rdfs:label "Spell" ;
+    rdfs:comment "A magical effect that can be cast by characters with spellcasting abilities." ;
+    rpg:icon "✨" .
+
+rpg:Creature a rdfs:Class ;
+    rdfs:subClassOf rpg:Thing ;
+    rdfs:label "Creature" ;
+    rdfs:comment "A monster, beast, or other entity that characters may encounter." ;
+    rpg:icon "🐉" .
+
+rpg:Campaign a rdfs:Class ;
+    rdfs:subClassOf rpg:Thing ;
+    rdfs:label "Campaign" ;
+    rdfs:comment "An ongoing series of connected game sessions with a continuing story." ;
+    rpg:icon "📜" .
+
+rpg:GameSystem a rdfs:Class ;
+    rdfs:subClassOf rpg:Thing ;
+    rdfs:label "GameSystem" ;
+    rdfs:comment "A roleplaying game system with its own rules and mechanics." ;
+    rpg:icon "🎲" .
+
+rpg:Location a rdfs:Class ;
+    rdfs:subClassOf rpg:Thing ;
+    rdfs:label "Location" ;
+    rdfs:comment "A place within the game world that characters can visit or explore." ;
+    rpg:icon "🏰" .
+
+rpg:Action a rdfs:Class ;
+    rdfs:subClassOf rpg:Thing ;
+    rdfs:label "Action" ;
+    rdfs:comment "An action that can be taken by a character or creature during gameplay." ;
+    rpg:icon "⚡" .
+
+# ============================================
+# Properties
+# ============================================
+
+# --- Thing Properties ---
+
+rpg:name a rdf:Property ;
+    rdfs:label "name" ;
+    rdfs:comment "The name of the item." ;
+    rdfs:domain rpg:Thing ;
+    rdfs:range xsd:string ;
+    rpg:required true .
+
+rpg:description a rdf:Property ;
+    rdfs:label "description" ;
+    rdfs:comment "A description of the item." ;
+    rdfs:domain rpg:Thing ;
+    rdfs:range xsd:string .
+
+rpg:identifier a rdf:Property ;
+    rdfs:label "identifier" ;
+    rdfs:comment "A unique identifier for the item." ;
+    rdfs:domain rpg:Thing ;
+    rdfs:range xsd:string, schema:URL .
+
+rpg:url a rdf:Property ;
+    rdfs:label "url" ;
+    rdfs:comment "URL of the item." ;
+    rdfs:domain rpg:Thing ;
+    rdfs:range schema:URL .
+
+rpg:image a rdf:Property ;
+    rdfs:label "image" ;
+    rdfs:comment "An image of the item." ;
+    rdfs:domain rpg:Thing ;
+    rdfs:range rpg:ImageObject, schema:URL .
+
+# --- Character Properties ---
+
+rpg:characterClass a rdf:Property ;
+    rdfs:label "characterClass" ;
+    rdfs:comment "The class or classes of the character." ;
+    rdfs:domain rpg:Character ;
+    rdfs:range rpg:CharacterClass ;
+    rpg:required true .
+
+rpg:level a rdf:Property ;
+    rdfs:label "level" ;
+    rdfs:comment "The current level of the character." ;
+    rdfs:domain rpg:Character ;
+    rdfs:range xsd:integer .
+
+rpg:race a rdf:Property ;
+    rdfs:label "race" ;
+    rdfs:comment "The race or ancestry of the character." ;
+    rdfs:domain rpg:Character ;
+    rdfs:range rpg:Race, xsd:string .
+
+rpg:alignment a rdf:Property ;
+    rdfs:label "alignment" ;
+    rdfs:comment "The moral and ethical alignment of the character." ;
+    rdfs:domain rpg:Character ;
+    rdfs:range rpg:Alignment, xsd:string .
+
+rpg:hitPoints a rdf:Property ;
+    rdfs:label "hitPoints" ;
+    rdfs:comment "Current and maximum hit points." ;
+    rdfs:domain rpg:Character, rpg:Creature ;
+    rdfs:range xsd:integer, rpg:DiceExpression .
+
+rpg:abilityScores a rdf:Property ;
+    rdfs:label "abilityScores" ;
+    rdfs:comment "The character's ability scores (STR, DEX, CON, INT, WIS, CHA)." ;
+    rdfs:domain rpg:Character, rpg:Creature ;
+    rdfs:range rpg:AbilityScoreSet .
+
+rpg:inventory a rdf:Property ;
+    rdfs:label "inventory" ;
+    rdfs:comment "Items carried by the character." ;
+    rdfs:domain rpg:Character ;
+    rdfs:range rpg:Item .
+
+rpg:spellsKnown a rdf:Property ;
+    rdfs:label "spellsKnown" ;
+    rdfs:comment "Spells the character knows or has prepared." ;
+    rdfs:domain rpg:Character ;
+    rdfs:range rpg:Spell .
+
+rpg:background a rdf:Property ;
+    rdfs:label "background" ;
+    rdfs:comment "The character's background story or archetype." ;
+    rdfs:domain rpg:Character ;
+    rdfs:range rpg:Background, xsd:string .
+
+rpg:player a rdf:Property ;
+    rdfs:label "player" ;
+    rdfs:comment "The player who controls this character." ;
+    rdfs:domain rpg:Character ;
+    rdfs:range schema:Person .
+
+# --- Item Properties ---
+
+rpg:itemType a rdf:Property ;
+    rdfs:label "itemType" ;
+    rdfs:comment "The category of item (weapon, armor, consumable, etc.)." ;
+    rdfs:domain rpg:Item ;
+    rdfs:range rpg:ItemCategory ;
+    rpg:required true .
+
+rpg:rarity a rdf:Property ;
+    rdfs:label "rarity" ;
+    rdfs:comment "The rarity level of the item." ;
+    rdfs:domain rpg:Item ;
+    rdfs:range rpg:Rarity, xsd:string .
+
+rpg:weight a rdf:Property ;
+    rdfs:label "weight" ;
+    rdfs:comment "The weight of the item." ;
+    rdfs:domain rpg:Item ;
+    rdfs:range rpg:QuantitativeValue .
+
+rpg:value a rdf:Property ;
+    rdfs:label "value" ;
+    rdfs:comment "The monetary value of the item." ;
+    rdfs:domain rpg:Item ;
+    rdfs:range rpg:MonetaryAmount .
+
+rpg:magicalProperties a rdf:Property ;
+    rdfs:label "magicalProperties" ;
+    rdfs:comment "Any magical properties or enchantments." ;
+    rdfs:domain rpg:Item ;
+    rdfs:range xsd:string .
+
+rpg:attunement a rdf:Property ;
+    rdfs:label "attunement" ;
+    rdfs:comment "Whether the item requires attunement." ;
+    rdfs:domain rpg:Item ;
+    rdfs:range xsd:boolean .
+
+rpg:damage a rdf:Property ;
+    rdfs:label "damage" ;
+    rdfs:comment "Damage dealt by the item (if weapon)." ;
+    rdfs:domain rpg:Item, rpg:Action ;
+    rdfs:range rpg:DamageExpression .
+
+rpg:armorClass a rdf:Property ;
+    rdfs:label "armorClass" ;
+    rdfs:comment "Armor class provided (if armor)." ;
+    rdfs:domain rpg:Item, rpg:Creature ;
+    rdfs:range xsd:integer .
+
+# --- Spell Properties ---
+
+rpg:spellLevel a rdf:Property ;
+    rdfs:label "spellLevel" ;
+    rdfs:comment "The level of the spell (0 for cantrips)." ;
+    rdfs:domain rpg:Spell ;
+    rdfs:range xsd:integer ;
+    rpg:required true .
+
+rpg:school a rdf:Property ;
+    rdfs:label "school" ;
+    rdfs:comment "The school of magic (Evocation, Necromancy, etc.)." ;
+    rdfs:domain rpg:Spell ;
+    rdfs:range rpg:MagicSchool ;
+    rpg:required true .
+
+rpg:castingTime a rdf:Property ;
+    rdfs:label "castingTime" ;
+    rdfs:comment "Time required to cast the spell." ;
+    rdfs:domain rpg:Spell ;
+    rdfs:range rpg:Duration, xsd:string .
+
+rpg:range a rdf:Property ;
+    rdfs:label "range" ;
+    rdfs:comment "The range of the spell or action." ;
+    rdfs:domain rpg:Spell, rpg:Action ;
+    rdfs:range rpg:Distance, xsd:string .
+
+rpg:components a rdf:Property ;
+    rdfs:label "components" ;
+    rdfs:comment "Required components (V, S, M)." ;
+    rdfs:domain rpg:Spell ;
+    rdfs:range rpg:SpellComponent .
+
+rpg:duration a rdf:Property ;
+    rdfs:label "duration" ;
+    rdfs:comment "How long the spell effect lasts." ;
+    rdfs:domain rpg:Spell ;
+    rdfs:range rpg:Duration, xsd:string .
+
+rpg:concentration a rdf:Property ;
+    rdfs:label "concentration" ;
+    rdfs:comment "Whether the spell requires concentration." ;
+    rdfs:domain rpg:Spell ;
+    rdfs:range xsd:boolean .
+
+rpg:ritual a rdf:Property ;
+    rdfs:label "ritual" ;
+    rdfs:comment "Whether the spell can be cast as a ritual." ;
+    rdfs:domain rpg:Spell ;
+    rdfs:range xsd:boolean .
+
+rpg:damageType a rdf:Property ;
+    rdfs:label "damageType" ;
+    rdfs:comment "Type of damage dealt, if any." ;
+    rdfs:domain rpg:Spell ;
+    rdfs:range rpg:DamageType .
+
+rpg:savingThrow a rdf:Property ;
+    rdfs:label "savingThrow" ;
+    rdfs:comment "The ability score used for saving throws." ;
+    rdfs:domain rpg:Spell, rpg:Action ;
+    rdfs:range rpg:AbilityType, rpg:SavingThrow .
+
+# --- Creature Properties ---
+
+rpg:creatureType a rdf:Property ;
+    rdfs:label "creatureType" ;
+    rdfs:comment "The type of creature (Beast, Dragon, Undead, etc.)." ;
+    rdfs:domain rpg:Creature ;
+    rdfs:range rpg:CreatureCategory ;
+    rpg:required true .
+
+rpg:challengeRating a rdf:Property ;
+    rdfs:label "challengeRating" ;
+    rdfs:comment "The challenge rating indicating difficulty." ;
+    rdfs:domain rpg:Creature ;
+    rdfs:range xsd:decimal, xsd:string ;
+    rpg:required true .
+
+rpg:size a rdf:Property ;
+    rdfs:label "size" ;
+    rdfs:comment "The size category of the creature." ;
+    rdfs:domain rpg:Creature ;
+    rdfs:range rpg:CreatureSize .
+
+rpg:speed a rdf:Property ;
+    rdfs:label "speed" ;
+    rdfs:comment "Movement speeds (walking, flying, swimming, etc.)." ;
+    rdfs:domain rpg:Creature ;
+    rdfs:range rpg:SpeedSet .
+
+rpg:actions a rdf:Property ;
+    rdfs:label "actions" ;
+    rdfs:comment "Actions the creature can take." ;
+    rdfs:domain rpg:Creature ;
+    rdfs:range rpg:Action .
+
+rpg:legendaryActions a rdf:Property ;
+    rdfs:label "legendaryActions" ;
+    rdfs:comment "Legendary actions, if any." ;
+    rdfs:domain rpg:Creature ;
+    rdfs:range rpg:Action .
+
+rpg:resistances a rdf:Property ;
+    rdfs:label "resistances" ;
+    rdfs:comment "Damage types the creature resists." ;
+    rdfs:domain rpg:Creature ;
+    rdfs:range rpg:DamageType .
+
+rpg:immunities a rdf:Property ;
+    rdfs:label "immunities" ;
+    rdfs:comment "Damage types or conditions the creature is immune to." ;
+    rdfs:domain rpg:Creature ;
+    rdfs:range rpg:DamageType, rpg:Condition .
+
+# --- Campaign Properties ---
+
+rpg:gameSystem a rdf:Property ;
+    rdfs:label "gameSystem" ;
+    rdfs:comment "The game system used for the campaign." ;
+    rdfs:domain rpg:Campaign ;
+    rdfs:range rpg:GameSystem ;
+    rpg:required true .
+
+rpg:gameMaster a rdf:Property ;
+    rdfs:label "gameMaster" ;
+    rdfs:comment "The person running the campaign." ;
+    rdfs:domain rpg:Campaign ;
+    rdfs:range schema:Person .
+
+rpg:players a rdf:Property ;
+    rdfs:label "players" ;
+    rdfs:comment "Players participating in the campaign." ;
+    rdfs:domain rpg:Campaign ;
+    rdfs:range schema:Person .
+
+rpg:characters a rdf:Property ;
+    rdfs:label "characters" ;
+    rdfs:comment "Player characters in the campaign." ;
+    rdfs:domain rpg:Campaign ;
+    rdfs:range rpg:Character .
+
+rpg:setting a rdf:Property ;
+    rdfs:label "setting" ;
+    rdfs:comment "The world or setting of the campaign." ;
+    rdfs:domain rpg:Campaign ;
+    rdfs:range rpg:GameWorld, xsd:string .
+
+rpg:sessions a rdf:Property ;
+    rdfs:label "sessions" ;
+    rdfs:comment "Individual game sessions." ;
+    rdfs:domain rpg:Campaign ;
+    rdfs:range rpg:GameSession .
+
+rpg:startDate a rdf:Property ;
+    rdfs:label "startDate" ;
+    rdfs:comment "When the campaign began." ;
+    rdfs:domain rpg:Campaign ;
+    rdfs:range xsd:date .
+
+rpg:status a rdf:Property ;
+    rdfs:label "status" ;
+    rdfs:comment "Whether the campaign is active, paused, or completed." ;
+    rdfs:domain rpg:Campaign ;
+    rdfs:range rpg:CampaignStatus .
+
+# --- GameSystem Properties ---
+
+rpg:publisher a rdf:Property ;
+    rdfs:label "publisher" ;
+    rdfs:comment "The publisher of the game system." ;
+    rdfs:domain rpg:GameSystem ;
+    rdfs:range schema:Organization .
+
+rpg:edition a rdf:Property ;
+    rdfs:label "edition" ;
+    rdfs:comment "The edition or version of the system." ;
+    rdfs:domain rpg:GameSystem ;
+    rdfs:range xsd:string .
+
+rpg:genre a rdf:Property ;
+    rdfs:label "genre" ;
+    rdfs:comment "The genre (fantasy, sci-fi, horror, etc.)." ;
+    rdfs:domain rpg:GameSystem ;
+    rdfs:range xsd:string .
+
+rpg:coreMechanic a rdf:Property ;
+    rdfs:label "coreMechanic" ;
+    rdfs:comment "The core dice/resolution mechanic." ;
+    rdfs:domain rpg:GameSystem ;
+    rdfs:range xsd:string .
+
+rpg:license a rdf:Property ;
+    rdfs:label "license" ;
+    rdfs:comment "The license under which the system is published." ;
+    rdfs:domain rpg:GameSystem ;
+    rdfs:range xsd:string, schema:URL .
+
+# --- Location Properties ---
+
+rpg:locationType a rdf:Property ;
+    rdfs:label "locationType" ;
+    rdfs:comment "The type of location (dungeon, city, wilderness, etc.)." ;
+    rdfs:domain rpg:Location ;
+    rdfs:range rpg:LocationCategory .
+
+rpg:containedIn a rdf:Property ;
+    rdfs:label "containedIn" ;
+    rdfs:comment "The larger location this is part of." ;
+    rdfs:domain rpg:Location ;
+    rdfs:range rpg:Location .
+
+rpg:contains a rdf:Property ;
+    rdfs:label "contains" ;
+    rdfs:comment "Smaller locations within this one." ;
+    rdfs:domain rpg:Location ;
+    rdfs:range rpg:Location .
+
+rpg:inhabitants a rdf:Property ;
+    rdfs:label "inhabitants" ;
+    rdfs:comment "Creatures or characters found here." ;
+    rdfs:domain rpg:Location ;
+    rdfs:range rpg:Creature, rpg:Character .
+
+rpg:treasures a rdf:Property ;
+    rdfs:label "treasures" ;
+    rdfs:comment "Notable items that can be found here." ;
+    rdfs:domain rpg:Location ;
+    rdfs:range rpg:Item .
+
+rpg:dangerLevel a rdf:Property ;
+    rdfs:label "dangerLevel" ;
+    rdfs:comment "How dangerous the location is." ;
+    rdfs:domain rpg:Location ;
+    rdfs:range xsd:integer, xsd:string .
+
+# --- Action Properties ---
+
+rpg:actionType a rdf:Property ;
+    rdfs:label "actionType" ;
+    rdfs:comment "The type of action (attack, spell, ability, etc.)." ;
+    rdfs:domain rpg:Action ;
+    rdfs:range rpg:ActionCategory .
+
+rpg:actionCost a rdf:Property ;
+    rdfs:label "actionCost" ;
+    rdfs:comment "The action economy cost (action, bonus action, reaction)." ;
+    rdfs:domain rpg:Action ;
+    rdfs:range rpg:ActionCost .
+
+rpg:target a rdf:Property ;
+    rdfs:label "target" ;
+    rdfs:comment "What can be targeted by this action." ;
+    rdfs:domain rpg:Action ;
+    rdfs:range rpg:TargetType .
+
+rpg:effect a rdf:Property ;
+    rdfs:label "effect" ;
+    rdfs:comment "The effect of the action." ;
+    rdfs:domain rpg:Action ;
+    rdfs:range xsd:string .
+
+rpg:recharge a rdf:Property ;
+    rdfs:label "recharge" ;
+    rdfs:comment "How the action recharges (if limited use)." ;
+    rdfs:domain rpg:Action ;
+    rdfs:range rpg:RechargeCondition .
