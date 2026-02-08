@@ -4,7 +4,10 @@ import path from "path";
 import { componentTagger } from "lovable-tagger";
 
 // https://vitejs.dev/config/
+// Set base to your repo name for GitHub Pages (e.g., '/rpg-schema/')
+// Or use '/' for custom domains
 export default defineConfig(({ mode }) => ({
+  base: process.env.GITHUB_PAGES === 'true' ? '/rpg-schema/' : '/',
   server: {
     host: "::",
     port: 8080,
