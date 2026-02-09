@@ -1271,3 +1271,100 @@ Prefer LLMArtifact nodes for richer prompt packs.
   rdfs:domain owl:Thing ;
   rdfs:range  xsd:string .
 
+
+#################################################################
+# Items affecting capabilities (definitions + runtime gating)
+#################################################################
+
+# --- Definition-level links (design intent) --------------------
+
+rpg:grantsCapability a owl:ObjectProperty ;
+  rdfs:label "grants capability"@en ;
+  rdfs:comment """
+Definition-level: owning/using this Item can grant a Capability.
+Example: "Wand of Fireballs" grants the "Cast Fireball" capability.
+This does not assert the capability is currently available; runtime depends on possession/equipped/charges/etc.
+"""@en ;
+  rdfs:domain rpg:Item ;
+  rdfs:range  rpg:Capability .
+
+rpg:requiresItem a owl:ObjectProperty ;
+  rdfs:label "requires item"@en ;
+  rdfs:comment """
+Definition-level: this Capability requires having (or using) a particular Item.
+Example: "Firearm Shot" requires "Pistol"; "Alchemy (brew)" requires "Alchemy Kit".
+"""@en ;
+  rdfs:domain rpg:Capability ;
+  rdfs:range  rpg:Item .
+
+rpg:modifiesCapability a owl:ObjectProperty ;
+  rdfs:label "modifies capability"@en ;
+  rdfs:comment """
+Definition-level: this Item modifies how a Capability behaves (damage type, range, effect tier, etc.).
+Use together with rpg:llmDescriptor or an LLMArtifact to describe the modification.
+"""@en ;
+  rdfs:domain rpg:Item ;
+  rdfs:range  rpg:Capability .
+
+rpg:capabilityNotes a owl:DatatypeProperty ;
+  rdfs:label "capability notes"@en ;
+  rdfs:comment """
+Free-form human/LLM text describing how an item grants/modifies a capability.
+If you need structured effects later, add an extension module (effects, modifiers, prerequisites).
+"""@en ;
+  rdfs:domain owl:Thing ;
+  rdfs:range  xsd:string .
+
+# --- Runtime: item instances that gate capabilities ------------
+
+rpg:equipped a owl:DatatypeProperty ;
+  rdfs:label "equipped"@en ;
+  rdfs:comment """
+Runtime hint on an ItemInstance: true means actively equipped/ready/held.
+Used to determine which item-granted capabilities are currently available.
+"""@en ;
+  rdfs:domain rpg:ItemInstance ;
+  rdfs:range  xsd:boolean .
+
+rpg:active a owl:DatatypeProperty ;
+  rdfs:label "active"@en ;
+  rdfs:comment """
+Runtime hint on an ItemInstance: true means powered/active/engaged (e.g., an activated artifact, stance, toggled gear).
+Useful for items that grant capabilities only while active.
+"""@en ;
+  rdfs:domain rpg:ItemInstance ;
+  rdfs:range  xsd:boolean .
+
+rpg:charges a owl:DatatypeProperty ;
+  rdfs:label "charges"@en ;
+  rdfs:comment "Runtime numeric field for consumable item resources (wand charges, ammo-in-magazine, etc.)."@en ;
+  rdfs:domain rpg:ItemInstance ;
+  rdfs:range  xsd:nonNegativeInteger .
+
+rpg:requiresEquipped a owl:DatatypeProperty ;
+  rdfs:label "requires equipped"@en ;
+  rdfs:comment """
+Definition-level hint: true means the item must be equipped (not merely owned) to grant/enable the capability.
+This is intentionally a hint, not a hard rule engine constraint.
+"""@en ;
+  rdfs:domain rpg:Item ;
+  rdfs:range  xsd:boolean .
+
+rpg:requiresActive a owl:DatatypeProperty ;
+  rdfs:label "requires active"@en ;
+  rdfs:comment """
+Definition-level hint: true means the item must be active to grant/enable the capability.
+"""@en ;
+  rdfs:domain rpg:Item ;
+  rdfs:range  xsd:boolean .
+
+# Optional: explicit runtime “available capability” assertion
+rpg:hasAvailableCapability a owl:ObjectProperty ;
+  rdfs:label "has available capability"@en ;
+  rdfs:comment """
+Runtime assertion: the actor currently has this capability available (after considering items, states, etc.).
+This is useful if you want to materialize/compute availability instead of inferring it on the fly.
+"""@en ;
+  rdfs:domain rpg:Actor ;
+  rdfs:range  rpg:Capability .
+
