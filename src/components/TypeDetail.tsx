@@ -122,7 +122,7 @@ const TypeDetail = ({ type, onClose, onTypeClick }: TypeDetailProps) => {
   "@context": "https://rpg-schema.org",
   "@type": "${type.name}",
   "name": "Example ${type.name}",
-  ${type.properties.slice(0, 3).map(p => `"${p.name}": "..."`).join(',\n  ')}
+  ${type.properties.slice(0, 3).map(p => `"${p.name.replace(/\s+(.)/g, (_, c) => c.toUpperCase()).replace(/^\w/, c => c.toLowerCase())}": "..."`).join(',\n  ')}
 }`}
         </pre>
       </div>
