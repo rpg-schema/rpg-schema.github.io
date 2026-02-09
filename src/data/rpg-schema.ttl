@@ -22,38 +22,34 @@ rpg: a owl:Ontology ;
 RPG Schema is an OWL vocabulary for representing roleplaying games (TTRPGs, narrative RPGs, and adjacent systems)
 in a ruleset-agnostic way while remaining queryable and LLM-friendly.
 
-Core modeling principles:
-1) Definitions vs Instances:
-   - RuleSet-defined terms (attributes, capabilities, states, trackers, rolls, tags, knobs, consequences, items)
-     are modeled as schema:DefinedTerm and linked to a rpg:RuleSet via schema:inDefinedTermSet (or the
-     specific *DefinedInRuleSet properties provided).
-   - Player/GM state is modeled through instance-nodes owned by an rpg:Actor (Character, Crew, Organization, etc.).
-     Examples: CharacterAttributeValue, TrackerInstance, ItemInstance, AppliedState, ClockInstance, ClassProgression.
+Read this as a spec for how to structure RPG data so that tools and LLMs can:
+- ground character sheets and world facts in structured data
+- query and merge different systems without bespoke per-game schemas
+- expose consistent UI elements (labels, icons, tags, trackers, clocks)
 
-2) Value-node pattern (important for interoperability):
-   - Do NOT encode values by minting new predicates like :strengthValue, :hpValue, etc.
-   - Instead, create a CharacterAttributeValue node that points to the RuleSetAttribute definition via rpg:forAttribute
-     and carries the current value via rpg:valueNumber and/or rpg:valueText.
+CORE MODELING RULES (important):
+A) DEFINITIONS vs INSTANCES (do not mix them)
+   - DEFINITIONS are rule-defined terms: attributes, items, capabilities, states, trackers, rolls, tags, knobs, etc.
+     These are modeled as schema:DefinedTerm and linked to a RuleSet (a schema:DefinedTermSet).
+   - INSTANCES are runtime/per-actor/per-scene things: attribute values, tracker values, applied conditions, inventory entries,
+     running clocks, etc. These are separate nodes, typically owned by an Actor (Character/Crew/Organization).
 
-3) Extensibility by subtyping:
-   - Systems differ; the schema supports extension through subclassing (e.g., Spell/Feature/Action),
-     and tagging (rpg:Tag / skos:Concept).
-   - Rulesets can introduce custom terms without changing the ontology: mint new individuals of schema:DefinedTerm
-     and attach them to a RuleSet.
+B) VALUE-NODE PATTERN (avoid predicate explosion)
+   - Do NOT mint custom predicates like :strengthValue, :hpValue, etc.
+   - Instead create a CharacterAttributeValue node that points to the attribute definition and carries the numeric/text value.
 
-4) Roll modeling:
-   - rpg:Roll represents a roll/resolution DEFINITION (not an executed result).
-     It can be linked to a capability and annotated with a resolution model and expression string.
-     (If you later need executed results, create a separate rpg:RollExecution / rpg:RollResult module.)
+C) ROLLS ARE DEFINITIONS (not roll results)
+   - rpg:Roll describes what kind of roll exists in a system (what dice, what extraction rules, what signals).
+   - If you later need actual roll results, add a separate module (e.g., RollExecution/RollOutcome). Keep this file definition-only.
 
-5) Fiction-first knobs:
-   - Position/Effect, consequences, and modifiers are modeled as rule-defined terms.
-     This supports narrative systems (Blades-like) and can be ignored by crunchy systems.
+D) MULTI-CHANNEL ROLLS (Daggerheart-style)
+   - A single roll can be evaluated into multiple “signals” (e.g., total sum for success, dominant die for side effects).
+   - Model that with rpg:RollEvaluation + rpg:RollSignal + rpg:SignalRole.
 
-Recommended LLM usage:
-- Always include schema:name and schema:description (or rdfs:label / rdfs:comment) on ruleset-defined terms.
-- Use schema:termCode for stable short identifiers (e.g., "STR", "stress", "skirmish", "controlled").
-- Prefer blank nodes for ephemeral per-character/per-scene instance nodes unless you need stable references.
+RECOMMENDED LLM PRACTICE:
+- Always include schema:name and schema:description (or rdfs:label/rdfs:comment) on definitions.
+- Use schema:termCode for stable identifiers ("STR", "stress", "skirmish", "dominant", ...).
+- Prefer blank nodes for ephemeral instance nodes (attribute values, tracker instances, applied states, etc.) unless stable IDs are required.
 """@en .
 
 #################################################################
@@ -82,18 +78,42 @@ rpg:termCode a owl:DatatypeProperty ;
   rdfs:domain schema:DefinedTerm ;
   rdfs:range xsd:string ;
   rdfs:label "term code"@en ;
-  rdfs:comment "A short stable identifier for a rule-defined term (e.g., STR, stress, skirmish, controlled)."@en .
+  rdfs:comment "Short stable identifier for a term, good for queries and deterministic lookups (e.g., STR, stress, skirmish)."@en .
 
 #################################################################
-# UI hint: icon/emoji (for rule-defined terms; interfaces may use it)
+# UI hint: icon/emoji (for definitions; interfaces may use it)
 #################################################################
 
 rpg:icon a owl:DatatypeProperty ;
   rdfs:label "icon"@en ;
-  rdfs:comment "A UI-friendly icon for a term, typically a single emoji (e.g., 🗡️, 🛡️, 🧪). Intended for interfaces; not a gameplay mechanic."@en ;
+  rdfs:comment "A UI-friendly icon for a definition, typically a single emoji (🗡️🛡️🧪💪). Not a gameplay mechanic."@en ;
   rdfs:subPropertyOf schema:emoji ;
   rdfs:domain schema:DefinedTerm ;
   rdfs:range xsd:string .
+
+#################################################################
+# WORLD / SETTING (anchor to reuse schema.org in-world instances)
+#################################################################
+
+rpg:World a owl:Class ;
+  rdfs:subClassOf schema:CreativeWork, schema:Place ;
+  rdfs:label "World"@en ;
+  rdfs:comment """
+A world/setting/universe anchor node.
+Use this to reuse schema.org freely for your setting data.
+
+- As schema:CreativeWork: attach lore metadata (creator, license, genre, description, dates, links).
+- As schema:Place: attach spatial semantics (containedInPlace, geo, sub-places) when you have them.
+
+Create ONE rpg:World per setting (e.g., Forgotten Realms, Doskvol, your homebrew world),
+then link any instance data to it via rpg:inWorld.
+"""@en .
+
+rpg:inWorld a owl:ObjectProperty ;
+  rdfs:label "in world"@en ;
+  rdfs:domain owl:Thing ;
+  rdfs:range  rpg:World ;
+  rdfs:comment "Associates any resource (character, crew, scene, item instance, clock instance, etc.) with the world/setting it belongs to."@en .
 
 #################################################################
 # TAGS (aligned to SKOS + schema:DefinedTerm)
@@ -103,7 +123,7 @@ rpg:Tag a owl:Class ;
   owl:equivalentClass skos:Concept ;
   rdfs:subClassOf schema:DefinedTerm ;
   rdfs:label "Tag"@en ;
-  rdfs:comment "A descriptive tag/trait keyword (controlled vocabulary friendly via SKOS)."@en .
+  rdfs:comment "A descriptive keyword/trait. Use SKOS labels (skos:prefLabel/altLabel) for clean controlled vocabularies."@en .
 
 rpg:hasTag a owl:ObjectProperty ;
   rdfs:label "has tag"@en ;
@@ -119,8 +139,7 @@ rpg:Actor a owl:Class ;
   owl:equivalentClass foaf:Agent ;
   rdfs:subClassOf schema:Thing ;
   rdfs:label "Actor"@en ;
-  rdfs:comment "An entity that can take actions and hold state (Character, Crew, Organization, etc.)."@en ;
-  rpg:icon "🧑‍💼".
+  rdfs:comment "Something that can act and hold state: Character, Crew, Organization, Faction, etc."@en .
 
 rpg:Character a owl:Class ;
   rdfs:subClassOf rpg:Actor, schema:Person, foaf:Person ;
@@ -133,7 +152,7 @@ rpg:Organization a owl:Class ;
 rpg:Crew a owl:Class ;
   rdfs:subClassOf rpg:Organization, foaf:Group, org:OrganizationalUnit ;
   rdfs:label "Crew"@en ;
-  rdfs:comment "A party/crew sheet as an actor (Blades crew; also usable as a D&D party/organization)."@en .
+  rdfs:comment "A group sheet treated as an actor (Blades crew, party, guild, expedition team, etc.)."@en .
 
 rpg:Faction a owl:Class ;
   rdfs:subClassOf rpg:Organization ;
@@ -146,17 +165,18 @@ rpg:Faction a owl:Class ;
 rpg:RuleSet a owl:Class ;
   rdfs:subClassOf schema:CreativeWork, schema:Game, schema:DefinedTermSet ;
   rdfs:label "Rule Set"@en ;
-  rdfs:comment "A ruleset/system (e.g., D&D 5e, Blades in the Dark), treated also as a DefinedTermSet for its terms."@en .
+  rdfs:comment "A game system (D&D 5e, Blades, Daggerheart, homebrew). Also acts as a DefinedTermSet for its definitions."@en .
 
 rpg:usesRuleSet a owl:ObjectProperty ;
   rdfs:label "uses rule set"@en ;
   rdfs:domain rpg:Actor ;
-  rdfs:range  rpg:RuleSet .
+  rdfs:range  rpg:RuleSet ;
+  rdfs:comment "Declares which ruleset an actor is currently modeled under (useful if a dataset contains multiple systems)."@en .
 
 rpg:RuleSetAttribute a owl:Class ;
   rdfs:subClassOf schema:DefinedTerm ;
   rdfs:label "Rule Set Attribute"@en ;
-  rdfs:comment "An attribute definition in a given ruleset (e.g., Strength, Armor Class, Stress)."@en .
+  rdfs:comment "Attribute/stat definition in a ruleset (STR, DEX, Stress, Skirmish rating, Armor, etc.)."@en .
 
 rpg:definedInRuleSet a owl:ObjectProperty ;
   rdfs:label "defined in rule set"@en ;
@@ -164,19 +184,11 @@ rpg:definedInRuleSet a owl:ObjectProperty ;
   rdfs:range  rpg:RuleSet ;
   rdfs:subPropertyOf schema:inDefinedTermSet .
 
-# Legacy/compat (kept for older drafts)
-rpg:RuleSetDiceRoll a owl:Class ;
-  rdfs:subClassOf schema:DefinedTerm ;
-  rdfs:label "Rule Set Dice Roll"@en ;
-  rdfs:comment "Legacy/compat class for roll-like definitions tied to a ruleset. Prefer rpg:Roll for new data."@en .
-
-#################################################################
-# Ownership (used by multiple instance-node patterns)
-#################################################################
-
+# Ownership used by multiple instance-node patterns
 rpg:ownedBy a owl:ObjectProperty ;
   rdfs:label "owned by"@en ;
-  rdfs:range  rpg:Actor .
+  rdfs:range  rpg:Actor ;
+  rdfs:comment "Generic ownership link for instance nodes (attribute values, tracker instances, item instances, applied states, etc.)."@en .
 
 #################################################################
 # CHARACTER: background + attributes (value-node pattern)
@@ -186,22 +198,23 @@ rpg:characterBackground a owl:DatatypeProperty ;
   rdfs:label "character background"@en ;
   rdfs:domain rpg:Character ;
   rdfs:range  xsd:string ;
-  rdfs:subPropertyOf schema:description .
+  rdfs:subPropertyOf schema:description ;
+  rdfs:comment "Free-text or structured narrative about origin, history, vice, beliefs, etc."@en .
 
 rpg:CharacterAttributeValue a owl:Class ;
   rdfs:label "Character Attribute Value"@en ;
   rdfs:comment """
-A per-character value assignment for a RuleSetAttribute.
-Typical usage (blank node form):
+INSTANCE NODE: an attribute value for one character.
+This is the canonical way to represent character stats.
 
-:SomeCharacter rpg:hasAttributeValue [
+Pattern (blank node recommended):
+:Char rpg:hasAttributeValue [
   a rpg:CharacterAttributeValue ;
   rpg:forAttribute :Strength ;
   rpg:valueNumber "16"^^xsd:decimal
 ] .
 
-Use rpg:valueText for non-numeric stats (e.g., alignment, playbook name, vice),
-or extend with additional value properties if needed (boolean, IRI, etc.).
+Use rpg:valueText for non-numeric stats (alignment, playbook name, etc.).
 """@en ;
   rdfs:subClassOf
     [ a owl:Restriction ;
@@ -237,28 +250,23 @@ rpg:valueText a owl:DatatypeProperty ;
   rdfs:range  xsd:string .
 
 #################################################################
-# RACE / CLASS / LEVELS (definitions in ruleset; per-character progression supports multiclassing)
+# RACE / CLASS / LEVELS (definitions in ruleset; progression supports multiclass)
 #################################################################
 
 rpg:RuleSetRace a owl:Class ;
   rdfs:subClassOf schema:DefinedTerm ;
   rdfs:label "Rule Set Race"@en ;
-  rdfs:comment "A playable race/species/ancestry definition scoped to a RuleSet."@en .
+  rdfs:comment "Definition of race/species/ancestry/heritage in a RuleSet."@en .
 
 rpg:RuleSetClass a owl:Class ;
   rdfs:subClassOf schema:DefinedTerm ;
   rdfs:label "Rule Set Class"@en ;
-  rdfs:comment "A character class/playbook definition scoped to a RuleSet."@en .
+  rdfs:comment "Definition of class/playbook/career/archetype in a RuleSet."@en .
 
 rpg:ClassLevelDefinition a owl:Class ;
   rdfs:subClassOf schema:DefinedTerm ;
   rdfs:label "Class Level Definition"@en ;
-  rdfs:comment "A specific level definition for a specific class within a RuleSet (e.g., Fighter level 5)."@en .
-
-rpg:hasRace a owl:ObjectProperty ;
-  rdfs:label "has race"@en ;
-  rdfs:domain rpg:Character ;
-  rdfs:range  rpg:RuleSetRace .
+  rdfs:comment "Definition of a specific level for a specific class (e.g., Fighter level 5). Optional but useful for rule-linked unlocks."@en .
 
 rpg:raceDefinedInRuleSet a owl:ObjectProperty ;
   rdfs:label "race defined in rule set"@en ;
@@ -272,25 +280,40 @@ rpg:classDefinedInRuleSet a owl:ObjectProperty ;
   rdfs:range  rpg:RuleSet ;
   rdfs:subPropertyOf schema:inDefinedTermSet .
 
-rpg:levelForClass a owl:ObjectProperty ;
-  rdfs:label "level for class"@en ;
-  rdfs:domain rpg:ClassLevelDefinition ;
-  rdfs:range  rpg:RuleSetClass .
-
 rpg:levelDefinedInRuleSet a owl:ObjectProperty ;
   rdfs:label "level defined in rule set"@en ;
   rdfs:domain rpg:ClassLevelDefinition ;
   rdfs:range  rpg:RuleSet ;
   rdfs:subPropertyOf schema:inDefinedTermSet .
 
+rpg:levelForClass a owl:ObjectProperty ;
+  rdfs:label "level for class"@en ;
+  rdfs:domain rpg:ClassLevelDefinition ;
+  rdfs:range  rpg:RuleSetClass .
+
 rpg:levelNumber a owl:DatatypeProperty ;
   rdfs:label "level number"@en ;
   rdfs:domain rpg:ClassLevelDefinition ;
   rdfs:range  xsd:positiveInteger .
 
+rpg:hasRace a owl:ObjectProperty ;
+  rdfs:label "has race"@en ;
+  rdfs:domain rpg:Character ;
+  rdfs:range  rpg:RuleSetRace .
+
 rpg:CharacterClassProgression a owl:Class ;
   rdfs:label "Character Class Progression"@en ;
-  rdfs:comment "A character's progression in a given class (supports multiclassing)."@en ;
+  rdfs:comment """
+INSTANCE NODE: character progression in one class/playbook.
+Use this to support multiclassing or multiple playbooks over time.
+
+Pattern:
+:Char rpg:hasClassProgression [
+  a rpg:CharacterClassProgression ;
+  rpg:forClass :Fighter ;
+  rpg:currentLevel "3"^^xsd:nonNegativeInteger
+] .
+"""@en ;
   rdfs:subClassOf
     [ a owl:Restriction ;
       owl:onProperty rpg:forClass ;
@@ -302,12 +325,6 @@ rpg:CharacterClassProgression a owl:Class ;
       owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
       owl:onClass rpg:Character
     ] .
-
-rpg:hasClassProgression a owl:ObjectProperty ;
-  rdfs:label "has class progression"@en ;
-  rdfs:domain rpg:Character ;
-  rdfs:range  rpg:CharacterClassProgression ;
-  owl:inverseOf rpg:ownedBy .
 
 rpg:forClass a owl:ObjectProperty ;
   rdfs:label "for class"@en ;
@@ -322,7 +339,14 @@ rpg:currentLevel a owl:DatatypeProperty ;
 rpg:currentLevelDefinition a owl:ObjectProperty ;
   rdfs:label "current level definition"@en ;
   rdfs:domain rpg:CharacterClassProgression ;
-  rdfs:range  rpg:ClassLevelDefinition .
+  rdfs:range  rpg:ClassLevelDefinition ;
+  rdfs:comment "Optional link to an explicit level definition node (useful if unlocks are modeled per-level)."@en .
+
+rpg:hasClassProgression a owl:ObjectProperty ;
+  rdfs:label "has class progression"@en ;
+  rdfs:domain rpg:Character ;
+  rdfs:range  rpg:CharacterClassProgression ;
+  owl:inverseOf rpg:ownedBy .
 
 #################################################################
 # CAPABILITIES (subtypes) + linking
@@ -332,10 +356,11 @@ rpg:Capability a owl:Class ;
   rdfs:subClassOf schema:DefinedTerm ;
   rdfs:label "Capability"@en ;
   rdfs:comment """
-A ruleset-defined capability (spell/feature/action/proficiency/special ability).
-Attach to Actor via rpg:hasCapability to indicate the actor possesses it.
-Use tags for traits (e.g., "arcane", "silent", "consumable", "ranged") and
-use Roll definitions to express how the capability is resolved (if applicable).
+DEFINITION NODE: something an actor can do or use.
+This covers: spells, features, moves, actions, proficiencies, special abilities, etc.
+
+Attach to an actor via rpg:hasCapability to indicate the actor possesses it.
+Use rpg:hasTag for traits and rpg:Roll definitions for how it is resolved.
 """@en .
 
 rpg:Spell a owl:Class ; rdfs:subClassOf rpg:Capability ; rdfs:label "Spell"@en .
@@ -356,26 +381,24 @@ rpg:hasCapability a owl:ObjectProperty ;
   rdfs:range  rpg:Capability .
 
 #################################################################
-# ROLLS (definitions only, not results)
+# ROLLS (definitions only) + Resolution models
 #################################################################
 
 rpg:Roll a owl:Class ;
   rdfs:subClassOf schema:DefinedTerm ;
   rdfs:label "Roll"@en ;
   rdfs:comment """
-A roll/resolution definition, not an executed result.
-Attach to a ruleset and optionally to a capability. Use rpg:rollExpression for human/tool parsing.
+DEFINITION NODE: a roll/resolution rule in a system (NOT an executed roll result).
 
-Examples:
-- D&D: expression "d20 + ability + proficiency vs DC"
-- Blades: expression "Nd6 take highest; success tiers 1-3/4-5/6/crit"
-
-For executed rolls, create a separate module with RollExecution and RollOutcome.
+Use rpg:rollExpression for a human/tool-friendly description.
+If the roll has multiple evaluation channels (e.g., Daggerheart: sum for success + dominant for side effects),
+use rpg:hasEvaluation with RollEvaluation nodes.
 """@en .
 
 rpg:ResolutionModel a owl:Class ;
   rdfs:subClassOf schema:DefinedTerm ;
-  rdfs:label "Resolution Model"@en .
+  rdfs:label "Resolution Model"@en ;
+  rdfs:comment "A broad family of resolution (d20, dice pool, cards, etc.). Optional but good for high-level interoperability."@en .
 
 rpg:D20Model a owl:Class ; rdfs:subClassOf rpg:ResolutionModel ; rdfs:label "d20 model"@en .
 rpg:DicePoolModel a owl:Class ; rdfs:subClassOf rpg:ResolutionModel ; rdfs:label "dice pool model"@en .
@@ -394,12 +417,95 @@ rpg:usesResolutionModel a owl:ObjectProperty ;
 rpg:rollExpression a owl:DatatypeProperty ;
   rdfs:label "roll expression"@en ;
   rdfs:domain rpg:Roll ;
-  rdfs:range  xsd:string .
+  rdfs:range  xsd:string ;
+  rdfs:comment "Tool/LLM readable string describing the roll (dice, modifiers, success tiers). Not meant to be fully machine-executable."@en .
 
 rpg:rollForCapability a owl:ObjectProperty ;
   rdfs:label "roll for capability"@en ;
   rdfs:domain rpg:Roll ;
-  rdfs:range  rpg:Capability .
+  rdfs:range  rpg:Capability ;
+  rdfs:comment "Associates a roll definition with the capability it resolves (optional; many systems use generic rolls not tied to a single capability)."@en .
+
+#################################################################
+# Multi-channel roll evaluation (Daggerheart-style)
+#################################################################
+
+rpg:RollSignal a owl:Class ;
+  rdfs:subClassOf schema:DefinedTerm ;
+  rdfs:label "Roll Signal"@en ;
+  rdfs:comment """
+DEFINITION NODE: a named signal extracted from the same dice of a roll.
+
+Examples of signals:
+- total sum (success threshold)
+- dominant die / dominant face (side effects)
+- highest die (Blades)
+- doubles/crit flag (Blades)
+- symbol counts (Genesys)
+
+A Roll can produce multiple signals via RollEvaluation nodes.
+"""@en .
+
+rpg:SignalRole a owl:Class ;
+  rdfs:subClassOf schema:DefinedTerm ;
+  rdfs:label "Signal Role"@en ;
+  rdfs:comment "Meaning of a signal channel: primary score, side-effect driver, momentum, complication, etc."@en .
+
+rpg:PrimaryRole a owl:Class ; rdfs:subClassOf rpg:SignalRole ; rdfs:label "Primary"@en .
+rpg:SideEffectRole a owl:Class ; rdfs:subClassOf rpg:SignalRole ; rdfs:label "Side Effect"@en .
+
+rpg:RollEvaluation a owl:Class ;
+  rdfs:label "Roll Evaluation"@en ;
+  rdfs:comment """
+DEFINITION NODE (often modeled as a blank node): one way of evaluating a Roll into a specific RollSignal.
+
+Key idea:
+- One roll, multiple evaluations.
+- Each evaluation produces one signal.
+- Each evaluation can declare the role of that signal (primary, side-effect, etc.).
+
+Example (Daggerheart-like):
+- Evaluation 1: produces total sum (role: primary)
+- Evaluation 2: produces dominant die (role: sideEffect)
+"""@en ;
+  rdfs:subClassOf
+    [ a owl:Restriction ;
+      owl:onProperty rpg:evaluatesRoll ;
+      owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+      owl:onClass rpg:Roll
+    ] ,
+    [ a owl:Restriction ;
+      owl:onProperty rpg:producesSignal ;
+      owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+      owl:onClass rpg:RollSignal
+    ] .
+
+rpg:evaluatesRoll a owl:ObjectProperty ;
+  rdfs:label "evaluates roll"@en ;
+  rdfs:domain rpg:RollEvaluation ;
+  rdfs:range  rpg:Roll .
+
+rpg:producesSignal a owl:ObjectProperty ;
+  rdfs:label "produces signal"@en ;
+  rdfs:domain rpg:RollEvaluation ;
+  rdfs:range  rpg:RollSignal .
+
+rpg:signalRole a owl:ObjectProperty ;
+  rdfs:label "signal role"@en ;
+  rdfs:domain rpg:RollEvaluation ;
+  rdfs:range  rpg:SignalRole .
+
+rpg:evaluationExpression a owl:DatatypeProperty ;
+  rdfs:label "evaluation expression"@en ;
+  rdfs:domain rpg:RollEvaluation ;
+  rdfs:range  xsd:string ;
+  rdfs:comment "Human/tool readable definition of the extraction rule (e.g., 'sum(dice)', 'dominant(dice)', 'highest(dice)', 'count(symbol:success)')."@en .
+
+rpg:hasEvaluation a owl:ObjectProperty ;
+  rdfs:label "has evaluation"@en ;
+  rdfs:domain rpg:Roll ;
+  rdfs:range  rpg:RollEvaluation ;
+  rdfs:comment "Links a Roll definition to one or more evaluation channels."@en .
 
 #################################################################
 # STATE / CONDITIONS (definitions + applied instances)
@@ -408,7 +514,7 @@ rpg:rollForCapability a owl:ObjectProperty ;
 rpg:State a owl:Class ;
   rdfs:subClassOf schema:DefinedTerm ;
   rdfs:label "State"@en ;
-  rdfs:comment "A state/condition/effect definition (e.g., Poisoned, Injured, Harm levels, etc.)."@en .
+  rdfs:comment "DEFINITION NODE: a condition/effect (Poisoned, Injured, Harm levels, On Fire, etc.)."@en .
 
 rpg:Condition a owl:Class ; rdfs:subClassOf rpg:State ; rdfs:label "Condition"@en .
 rpg:Harm a owl:Class ; rdfs:subClassOf rpg:State ; rdfs:label "Harm"@en .
@@ -422,10 +528,9 @@ rpg:stateDefinedInRuleSet a owl:ObjectProperty ;
 rpg:AppliedState a owl:Class ;
   rdfs:label "Applied State"@en ;
   rdfs:comment """
-An instance of a State/Condition applied to an Actor.
-Use this for D&D-like conditions (Poisoned), Blades harm, temporary effects, etc.
+INSTANCE NODE: a State applied to an Actor (optionally with severity and notes).
 
-Example:
+Pattern:
 :Actor rpg:hasAppliedState [
   a rpg:AppliedState ;
   rpg:appliesState :Poisoned ;
@@ -471,13 +576,13 @@ rpg:hasAppliedState a owl:ObjectProperty ;
   rdfs:range  rpg:AppliedState .
 
 #################################################################
-# TRACKERS (HP, Stress, Spell slots, XP, Reputation...)
+# TRACKERS (HP, Stress, XP, Reputation, etc.)
 #################################################################
 
 rpg:Tracker a owl:Class ;
   rdfs:subClassOf schema:DefinedTerm ;
   rdfs:label "Tracker"@en ;
-  rdfs:comment "A rule-defined track/resource (HP, Stress, XP, Reputation, etc.)."@en .
+  rdfs:comment "DEFINITION NODE: a numeric track/resource (HP, Stress, XP, Spell Slots, Reputation, etc.)."@en .
 
 rpg:ReputationTracker a owl:Class ;
   rdfs:subClassOf rpg:Tracker ;
@@ -492,11 +597,9 @@ rpg:trackerDefinedInRuleSet a owl:ObjectProperty ;
 rpg:TrackerInstance a owl:Class ;
   rdfs:label "Tracker Instance"@en ;
   rdfs:comment """
-A per-actor resource/state tracker instance.
-Use Trackers for HP, Stress, XP, Spell Slots, Reputation, etc.
-Attach the definition via rpg:forTracker and keep current/max on the instance node.
+INSTANCE NODE: the current/max values of a tracker for an Actor.
 
-Example:
+Pattern:
 :Actor rpg:hasTracker [
   a rpg:TrackerInstance ;
   rpg:forTracker :Stress ;
@@ -543,7 +646,8 @@ rpg:hasTracker a owl:ObjectProperty ;
 
 rpg:TemporalEntity a owl:Class ;
   rdfs:subClassOf schema:Event ;
-  rdfs:label "Temporal Entity"@en .
+  rdfs:label "Temporal Entity"@en ;
+  rdfs:comment "A time-bounded container (session, scene, phase). Good for logging, clocks, and world-state snapshots."@en .
 
 rpg:Session a owl:Class ; rdfs:subClassOf rpg:TemporalEntity ; rdfs:label "Session"@en .
 rpg:Scene   a owl:Class ; rdfs:subClassOf rpg:TemporalEntity ; rdfs:label "Scene"@en .
@@ -557,7 +661,8 @@ rpg:partOf a owl:ObjectProperty ;
 rpg:occursDuring a owl:ObjectProperty ;
   rdfs:label "occurs during"@en ;
   rdfs:domain owl:Thing ;
-  rdfs:range  rpg:TemporalEntity .
+  rdfs:range  rpg:TemporalEntity ;
+  rdfs:comment "Links any node (applied states, clocks, relationships, notes) to a session/scene/phase context."@en .
 
 rpg:startTime a owl:DatatypeProperty ;
   rdfs:label "start time"@en ;
@@ -572,13 +677,13 @@ rpg:endTime a owl:DatatypeProperty ;
   rdfs:subPropertyOf schema:endDate .
 
 #################################################################
-# CLOCKS
+# CLOCKS (progress trackers, especially for narrative systems)
 #################################################################
 
 rpg:Clock a owl:Class ;
   rdfs:subClassOf schema:DefinedTerm ;
   rdfs:label "Clock"@en ;
-  rdfs:comment "A segmented progress clock definition (threat, project, countdown, challenge, etc.)."@en .
+  rdfs:comment "DEFINITION NODE: a segmented progress clock definition (threat, project, countdown, challenge, ritual, etc.)."@en .
 
 rpg:clockDefinedInRuleSet a owl:ObjectProperty ;
   rdfs:label "clock defined in rule set"@en ;
@@ -594,15 +699,14 @@ rpg:totalSegments a owl:DatatypeProperty ;
 rpg:ClockInstance a owl:Class ;
   rdfs:label "Clock Instance"@en ;
   rdfs:comment """
-A running progress clock in a particular context (scene/phase/session).
-Used heavily in Blades, but also for D&D skill challenges, rituals, countdowns, projects, etc.
+INSTANCE NODE: a running clock with filled segments in a specific context (scene/phase/session).
 
-Example:
-:SomeScene rpg:hasClock [
+Pattern:
+:Scene rpg:hasClock [
   a rpg:ClockInstance ;
   rpg:forClock :AlarmClock ;
   rpg:filledSegments "2"^^xsd:nonNegativeInteger ;
-  rpg:clockNotes "Guards suspicious; one more mistake fills another segment."
+  rpg:clockNotes "Guards are suspicious."
 ] .
 """@en ;
   rdfs:subClassOf
@@ -639,7 +743,10 @@ rpg:hasClock a owl:ObjectProperty ;
 rpg:Relationship a owl:Class ;
   rdfs:subClassOf schema:Role ;
   rdfs:label "Relationship"@en ;
-  rdfs:comment "A relationship between two actors, optionally with stance/strength/notes."@en ;
+  rdfs:comment """
+INSTANCE/RELATION NODE: relationship between two Actors with optional score and notes.
+Useful for factions, allies, rivals, crew ties, bonds, etc.
+"""@en ;
   rdfs:subClassOf
     [ a owl:Restriction ;
       owl:onProperty rpg:fromActor ;
@@ -665,7 +772,8 @@ rpg:toActor a owl:ObjectProperty ;
 rpg:relationshipScore a owl:DatatypeProperty ;
   rdfs:label "relationship score"@en ;
   rdfs:domain rpg:Relationship ;
-  rdfs:range  xsd:integer .
+  rdfs:range  xsd:integer ;
+  rdfs:comment "Numeric stance/strength (e.g., -3..+3 for faction status; or any scale you define)."@en .
 
 rpg:relationshipNotes a owl:DatatypeProperty ;
   rdfs:label "relationship notes"@en ;
@@ -684,7 +792,7 @@ rpg:hasRelationship a owl:ObjectProperty ;
 rpg:Item a owl:Class ;
   rdfs:subClassOf schema:DefinedTerm ;
   rdfs:label "Item"@en ;
-  rdfs:comment "An item definition (weapon, armor, gear, tool, asset)."@en .
+  rdfs:comment "DEFINITION NODE: an item type (weapon, armor, gear, tool, asset)."@en .
 
 rpg:itemDefinedInRuleSet a owl:ObjectProperty ;
   rdfs:label "item defined in rule set"@en ;
@@ -694,7 +802,16 @@ rpg:itemDefinedInRuleSet a owl:ObjectProperty ;
 
 rpg:ItemInstance a owl:Class ;
   rdfs:label "Item Instance"@en ;
-  rdfs:comment "An actor-owned instance of an item (supports quantity/condition/load/etc.)."@en ;
+  rdfs:comment """
+INSTANCE NODE: ownership of an item definition by an Actor (supports quantity, condition, load, etc.).
+
+Pattern:
+:Actor rpg:hasItem [
+  a rpg:ItemInstance ;
+  rpg:forItem :Longsword ;
+  rpg:quantity "1"^^xsd:nonNegativeInteger
+] .
+"""@en ;
   rdfs:subClassOf
     [ a owl:Restriction ;
       owl:onProperty rpg:ownedBy ;
@@ -724,13 +841,13 @@ rpg:hasItem a owl:ObjectProperty ;
   owl:inverseOf rpg:ownedBy .
 
 #################################################################
-# ADVANCEMENT (rules + unlocks)
+# ADVANCEMENT (definitions + unlocks)
 #################################################################
 
 rpg:AdvancementRule a owl:Class ;
   rdfs:subClassOf schema:DefinedTerm ;
   rdfs:label "Advancement Rule"@en ;
-  rdfs:comment "A rule-defined advancement mechanic (XP triggers, milestone, downtime advances, etc.)."@en .
+  rdfs:comment "DEFINITION NODE: how advancement works (XP triggers, milestones, downtime advances, etc.)."@en .
 
 rpg:advancementDefinedInRuleSet a owl:ObjectProperty ;
   rdfs:label "advancement defined in rule set"@en ;
@@ -746,7 +863,7 @@ rpg:hasAdvancementRule a owl:ObjectProperty ;
 rpg:Unlock a owl:Class ;
   rdfs:subClassOf schema:DefinedTerm ;
   rdfs:label "Unlock"@en ;
-  rdfs:comment "A rule-defined unlock gained from advancement (capability, tag, tracker changes, etc.)."@en .
+  rdfs:comment "DEFINITION NODE: something granted by advancement (capability, tags, tracker changes, etc.)."@en .
 
 rpg:unlocksCapability a owl:ObjectProperty ;
   rdfs:label "unlocks capability"@en ;
@@ -770,7 +887,7 @@ rpg:grantsUnlock a owl:ObjectProperty ;
 rpg:FictionKnob a owl:Class ;
   rdfs:subClassOf schema:DefinedTerm ;
   rdfs:label "Fiction Knob"@en ;
-  rdfs:comment "A fiction-first parameter shaping outcome interpretation (Position, Effect, etc.)."@en .
+  rdfs:comment "DEFINITION NODE: a narrative parameter shaping interpretation (Position, Effect, Approach, etc.)."@en .
 
 rpg:RiskPosition a owl:Class ; rdfs:subClassOf rpg:FictionKnob ; rdfs:label "Risk Position"@en .
 rpg:EffectLevel a owl:Class ; rdfs:subClassOf rpg:FictionKnob ; rdfs:label "Effect Level"@en .
@@ -784,7 +901,7 @@ rpg:knobDefinedInRuleSet a owl:ObjectProperty ;
 rpg:Consequence a owl:Class ;
   rdfs:subClassOf schema:DefinedTerm ;
   rdfs:label "Consequence"@en ;
-  rdfs:comment "A potential consequence type/severity defined by a ruleset."@en .
+  rdfs:comment "DEFINITION NODE: a possible consequence category (harm, complication, reduced effect, etc.)."@en .
 
 rpg:consequenceDefinedInRuleSet a owl:ObjectProperty ;
   rdfs:label "consequence defined in rule set"@en ;
@@ -810,7 +927,7 @@ rpg:rollHasPossibleConsequence a owl:ObjectProperty ;
 rpg:RollModifier a owl:Class ;
   rdfs:subClassOf schema:DefinedTerm ;
   rdfs:label "Roll Modifier"@en ;
-  rdfs:comment "A rule-defined modifier concept (bargain, advantage, teamwork assist, resistance option)."@en .
+  rdfs:comment "DEFINITION NODE: modifier concepts (advantage, bargain, teamwork assist, resistance option, etc.)."@en .
 
 rpg:modifierDefinedInRuleSet a owl:ObjectProperty ;
   rdfs:label "modifier defined in rule set"@en ;
@@ -824,7 +941,7 @@ rpg:rollAllowsModifier a owl:ObjectProperty ;
   rdfs:range  rpg:RollModifier .
 
 #################################################################
-# Optional disjointness guardrails (helps data quality; remove if too strict)
+# Optional disjointness guardrails (remove if too strict for your data)
 #################################################################
 
 rpg:RuleSet owl:disjointWith rpg:Actor .
