@@ -1368,3 +1368,34 @@ This is useful if you want to materialize/compute availability instead of inferr
   rdfs:domain rpg:Actor ;
   rdfs:range  rpg:Capability .
 
+#################################################################
+# Non-human actors: creatures, monsters, animals
+#################################################################
+
+rpg:Creature a owl:Class ;
+  rdfs:label "Creature"@en ;
+  rdfs:comment """
+A non-human actor: animals, monsters, spirits, constructs, etc.
+Creature is intentionally broad: if it can act and have state, it can be an rpg:Creature.
+Aligned to schema:Thing to stay compatible with schema.org graphs.
+"""@en ;
+  rdfs:subClassOf rpg:Actor, schema:Thing, foaf:Agent .
+
+rpg:Animal a owl:Class ;
+  rdfs:label "Animal"@en ;
+  rdfs:comment """
+An animal actor. Use schema:taxonomicName / schema:species (when available) and tags for traits.
+Examples: horse, wolf, hawk, guard dog.
+"""@en ;
+  rdfs:subClassOf rpg:Creature, schema:Animal .
+
+rpg:Monster a owl:Class ;
+  rdfs:label "Monster"@en ;
+  rdfs:comment """
+A creature typically framed as an adversary or dangerous entity in the ruleset/world.
+This is not a moral claim; it’s a gameplay-facing category.
+Examples: ogre, vampire, demon, dragon, animated armor.
+"""@en ;
+  rdfs:subClassOf rpg:Creature .
+
+
