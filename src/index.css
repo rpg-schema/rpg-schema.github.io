@@ -109,6 +109,10 @@
 
     --parchment: 28 25% 14%;
     --parchment-dark: 28 25% 10%;
+
+    --gradient-parchment: linear-gradient(180deg, hsl(28, 25%, 14%) 0%, hsl(28, 25%, 10%) 100%);
+    --gradient-header: linear-gradient(180deg, hsl(28, 25%, 12%) 0%, hsl(28, 25%, 8%) 100%);
+    --gradient-gold-text: hsl(40, 65%, 60%);
   }
 }
 
