@@ -27,7 +27,7 @@ const Footer = () => {
                 </a>
               </li>
               <li>
-                <a href="#" className="text-parchment/70 hover:text-parchment transition-colors">
+                <a href="https://raw.githubusercontent.com/rpg-schema/rpg-schema.github.io/refs/heads/main/src/data/rpg-schema.ttl" target="_blank" rel="noopener noreferrer" className="text-parchment/70 hover:text-parchment transition-colors">
                   Vocabulary Files
                 </a>
               </li>
