@@ -34,7 +34,7 @@ const Header = () => {
               Contribute
             </a>
             <a 
-              href="https://github.com" 
+              href="https://github.com/rpg-schema" 
               target="_blank" 
               rel="noopener noreferrer"
               className="text-foreground/80 hover:text-primary transition-colors font-medium"

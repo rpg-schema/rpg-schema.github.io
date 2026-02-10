@@ -43,7 +43,7 @@ const Footer = () => {
             <h4 className="font-heading font-bold text-gold-light mb-4">Community</h4>
             <ul className="space-y-2 text-sm">
               <li>
-                <a href="#" className="text-parchment/70 hover:text-parchment transition-colors">
+                <a href="https://github.com/rpg-schema" target="_blank" rel="noopener noreferrer" className="text-parchment/70 hover:text-parchment transition-colors">
                   GitHub
                 </a>
               </li>
