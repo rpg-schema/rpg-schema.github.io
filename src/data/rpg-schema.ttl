@@ -1398,4 +1398,89 @@ Examples: ogre, vampire, demon, dragon, animated armor.
 """@en ;
   rdfs:subClassOf rpg:Creature .
 
+#################################################################
+# Ruleset layering: expansions, supplements, modules
+#################################################################
+
+rpg:extendsRuleSet a owl:ObjectProperty ;
+  rdfs:label "extends rule set"@en ;
+  rdfs:comment """
+Declares that this RuleSet extends another RuleSet.
+
+Semantics:
+- The extending ruleset inherits the definitions and semantics of the base ruleset.
+- It may add new definitions (items, monsters, spells, trackers, states, mappings).
+- It may specialize or override interpretations of existing definitions.
+
+Examples:
+- Monster Manual extends DnD5e
+- Curse of Strahd extends DnD5e
+- Xanathar's Guide extends DnD5e
+- A homebrew hack extends BitD
+
+This relationship is directional and transitive in meaning (though not declared owl:TransitiveProperty to avoid unintended inference chains).
+"""@en ;
+  rdfs:domain rpg:RuleSet ;
+  rdfs:range  rpg:RuleSet .
+
+rpg:hasExpansion a owl:ObjectProperty ;
+  rdfs:label "has expansion"@en ;
+  rdfs:comment """
+Inverse of extendsRuleSet. Declares that a RuleSet has one or more expansion RuleSets.
+Provided for query convenience.
+"""@en ;
+  rdfs:domain rpg:RuleSet ;
+  rdfs:range  rpg:RuleSet ;
+  owl:inverseOf rpg:extendsRuleSet .
+
+#################################################################
+# Optional classification of ruleset roles
+#################################################################
+
+rpg:RuleSetType a owl:Class ;
+  rdfs:label "Rule Set Type"@en ;
+  rdfs:comment """
+Classification of a RuleSet's role relative to other rulesets.
+
+Examples:
+- CoreRuleSet: foundational mechanics
+- ExpansionRuleSet: adds content/mechanics to a base ruleset
+- SettingModule: defines a world, actors, narrative structures
+- Supplement: adds optional rules/content
+- Hack: modifies behavior of an existing ruleset
+"""@en ;
+  rdfs:subClassOf schema:DefinedTerm .
+
+rpg:ruleSetType a owl:ObjectProperty ;
+  rdfs:label "rule set type"@en ;
+  rdfs:comment "Assigns a classification role to a RuleSet."@en ;
+  rdfs:domain rpg:RuleSet ;
+  rdfs:range  rpg:RuleSetType .
+
+# Common starter instances
+
+rpg:CoreRuleSet a rpg:RuleSetType ;
+  schema:name "Core Rule Set"@en ;
+  rpg:termCode "CORE" ;
+  rpg:icon "📘" .
+
+rpg:ExpansionRuleSet a rpg:RuleSetType ;
+  schema:name "Expansion Rule Set"@en ;
+  rpg:termCode "EXPANSION" ;
+  rpg:icon "📗" .
+
+rpg:SettingModule a rpg:RuleSetType ;
+  schema:name "Setting Module"@en ;
+  rpg:termCode "SETTING" ;
+  rpg:icon "🌍" .
+
+rpg:SupplementRuleSet a rpg:RuleSetType ;
+  schema:name "Supplement"@en ;
+  rpg:termCode "SUPPLEMENT" ;
+  rpg:icon "📎" .
+
+rpg:HackRuleSet a rpg:RuleSetType ;
+  schema:name "Hack Rule Set"@en ;
+  rpg:termCode "HACK" ;
+  rpg:icon "🧪" .
 
