@@ -1,0 +1,76 @@
+@prefix rdf:     <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs:    <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix owl:     <http://www.w3.org/2002/07/owl#> .
+@prefix xsd:     <http://www.w3.org/2001/XMLSchema#> .
+
+@prefix schema:  <https://schema.org/> .
+@prefix geo:     <http://www.opengis.net/ont/geosparql#> .
+@prefix ofm:     <https://openfantasymaps.org/ontology/1.0/> .
+
+ofm: a owl:Ontology ;
+  rdfs:label "OpenFantasyMaps Overlay Ontology (WGS84)"@en ;
+  schema:description """
+A minimal overlay ontology for anchoring resources to OpenFantasyMaps worlds/maps.
+
+All OFM maps use WGS84 coordinates. Therefore:
+- geometry is expressed using GeoSPARQL (geo:hasGeometry / geo:asWKT) in EPSG:4326.
+- OFM-specific context is expressed by referencing the OFM World and (optionally) a specific Map layer.
+
+Key idea:
+The same lon/lat can exist in many fictional worlds, so we must always qualify coordinates with ofm:World (and/or ofm:Map).
+"""@en .
+
+#################################################################
+# World + Map (hosted by OpenFantasyMaps)
+#################################################################
+
+ofm:World a owl:Class ;
+  rdfs:subClassOf schema:CreativeWork ;
+  rdfs:label "OFM World"@en ;
+  rdfs:comment "A world as represented in OpenFantasyMaps (setting/universe container)."@en .
+
+ofm:Map a owl:Class ;
+  rdfs:subClassOf schema:CreativeWork ;
+  rdfs:label "OFM Map"@en ;
+  rdfs:comment """
+A specific hosted map/layer/tileset within an OFM World.
+Even with WGS84, multiple maps may exist (political map, terrain map, dungeon overlay, historical snapshot).
+"""@en .
+
+ofm:worldId a owl:DatatypeProperty ;
+  rdfs:label "world id"@en ;
+  rdfs:range xsd:string ;
+  rdfs:comment "Stable OpenFantasyMaps identifier (slug/uuid) for the world."@en .
+
+ofm:mapId a owl:DatatypeProperty ;
+  rdfs:label "map id"@en ;
+  rdfs:range xsd:string ;
+  rdfs:comment "Stable OpenFantasyMaps identifier (slug/uuid) for the map/layer/tileset."@en .
+
+ofm:inWorld a owl:ObjectProperty ;
+  rdfs:label "in OFM world"@en ;
+  rdfs:domain ofm:Map ;
+  rdfs:range  ofm:World ;
+  rdfs:comment "Associates a map/layer with its OFM world."@en .
+
+#################################################################
+# Spatial anchoring to OFM context (world/map qualifiers)
+#################################################################
+
+ofm:locatedInWorld a owl:ObjectProperty ;
+  rdfs:label "located in OFM world"@en ;
+  rdfs:domain owl:Thing ;
+  rdfs:range  ofm:World ;
+  rdfs:comment """
+Qualifies that this resource's WGS84 geometry is defined within (and should be interpreted on) a specific OFM World.
+This avoids ambiguity when multiple fictional worlds share the same lon/lat coordinate values.
+"""@en .
+
+ofm:locatedOnMap a owl:ObjectProperty ;
+  rdfs:label "located on OFM map"@en ;
+  rdfs:domain owl:Thing ;
+  rdfs:range  ofm:Map ;
+  rdfs:comment """
+Optional qualifier to pin a location to a specific OFM map/layer (within an OFM World).
+Useful when a world has multiple layers or time-slices.
+"""@en .
