@@ -1456,8 +1456,164 @@ rpg:ruleSetType a owl:ObjectProperty ;
   rdfs:comment "Assigns a classification role to a RuleSet."@en ;
   rdfs:domain rpg:RuleSet ;
   rdfs:range  rpg:RuleSetType .
+#################################################################
+# Prerequisites / gating (state-machine friendly)
+#################################################################
 
-# Common starter instances
+rpg:Prerequisite a owl:Class ;
+  rdfs:label "Prerequisite"@en ;
+  rdfs:comment """
+A declarative gating rule describing when something is available/triggerable.
+Used primarily to gate Scenes, but can also gate Capabilities, Items, Clocks, etc.
+
+Prerequisites are intentionally descriptive, not a full rule engine.
+Tooling evaluates them against the current world state (applied states, items, clocks, trackers, tags).
+"""@en ;
+  rdfs:subClassOf schema:Intangible .
+
+# What the prerequisite gates (typically a Scene)
+rpg:gates a owl:ObjectProperty ;
+  rdfs:label "gates"@en ;
+  rdfs:comment "The resource (Scene/Capability/etc.) whose availability is controlled by this prerequisite."@en ;
+  rdfs:domain rpg:Prerequisite ;
+  rdfs:range  owl:Thing .
+
+# Optional: scope where to evaluate it (world/session/scene)
+rpg:prereqScope a owl:ObjectProperty ;
+  rdfs:label "prerequisite scope"@en ;
+  rdfs:comment """
+Where this prerequisite should be evaluated. Often a World (global campaign state) or a Session (current timeline).
+If omitted, assume World-level evaluation.
+"""@en ;
+  rdfs:domain rpg:Prerequisite ;
+  rdfs:range  owl:Thing .
+
+# Logical combination helpers
+rpg:logicalOperator a owl:DatatypeProperty ;
+  rdfs:label "logical operator"@en ;
+  rdfs:comment """
+How to combine the requirement clauses on this prerequisite.
+Values: "ALL" (AND), "ANY" (OR), "NONE" (negation group).
+Default should be treated as ALL if missing.
+"""@en ;
+  rdfs:domain rpg:Prerequisite ;
+  rdfs:range  xsd:string .
+
+#################################################################
+# Requirement clauses (each is optional; combine using logicalOperator)
+#################################################################
+
+# 1) Requires a state to be applied (or not applied) to an actor
+rpg:requiresAppliedState a owl:ObjectProperty ;
+  rdfs:label "requires applied state"@en ;
+  rdfs:comment """
+Requires that a given State is applied to a target Actor.
+Use together with rpg:prereqTargetActor.
+"""@en ;
+  rdfs:domain rpg:Prerequisite ;
+  rdfs:range  rpg:State .
+
+rpg:forbidsAppliedState a owl:ObjectProperty ;
+  rdfs:label "forbids applied state"@en ;
+  rdfs:comment "Requires that a given State is NOT applied to the target Actor."@en ;
+  rdfs:domain rpg:Prerequisite ;
+  rdfs:range  rpg:State .
+
+rpg:prereqTargetActor a owl:ObjectProperty ;
+  rdfs:label "prerequisite target actor"@en ;
+  rdfs:comment """
+The Actor whose state/items/trackers are inspected for this prerequisite.
+Commonly a specific NPC (Ireena), Strahd, or the Crew/Party actor.
+"""@en ;
+  rdfs:domain rpg:Prerequisite ;
+  rdfs:range  rpg:Actor .
+
+# 2) Requires item possession (by actor)
+rpg:requiresItem a owl:ObjectProperty ;
+  rdfs:label "requires item"@en ;
+  rdfs:comment "Requires the target actor to possess (at least one instance of) the given Item definition."@en ;
+  rdfs:domain rpg:Prerequisite ;
+  rdfs:range  rpg:Item .
+
+rpg:forbidsItem a owl:ObjectProperty ;
+  rdfs:label "forbids item"@en ;
+  rdfs:comment "Requires the target actor NOT to possess the given Item definition."@en ;
+  rdfs:domain rpg:Prerequisite ;
+  rdfs:range  rpg:Item .
+
+# 3) Requires a clock threshold (scene/project progress)
+rpg:requiresClockAtLeast a owl:ObjectProperty ;
+  rdfs:label "requires clock at least"@en ;
+  rdfs:comment "Declares which Clock the prerequisite refers to; see rpg:clockMinSegments."@en ;
+  rdfs:domain rpg:Prerequisite ;
+  rdfs:range  rpg:Clock .
+
+rpg:clockMinSegments a owl:DatatypeProperty ;
+  rdfs:label "clock min segments"@en ;
+  rdfs:comment "Minimum filled segments required on the referenced clock (>=)."@en ;
+  rdfs:domain rpg:Prerequisite ;
+  rdfs:range  xsd:nonNegativeInteger .
+
+rpg:requiresClockAtMost a owl:ObjectProperty ;
+  rdfs:label "requires clock at most"@en ;
+  rdfs:comment "Declares which Clock the prerequisite refers to; see rpg:clockMaxSegments."@en ;
+  rdfs:domain rpg:Prerequisite ;
+  rdfs:range  rpg:Clock .
+
+rpg:clockMaxSegments a owl:DatatypeProperty ;
+  rdfs:label "clock max segments"@en ;
+  rdfs:comment "Maximum filled segments allowed on the referenced clock (<=)."@en ;
+  rdfs:domain rpg:Prerequisite ;
+  rdfs:range  xsd:nonNegativeInteger .
+
+# 4) Requires a tracker threshold (HP/stress/heat/rep)
+rpg:requiresTracker a owl:ObjectProperty ;
+  rdfs:label "requires tracker"@en ;
+  rdfs:comment "Declares which Tracker the prerequisite refers to; see rpg:trackerMinValue / rpg:trackerMaxValue."@en ;
+  rdfs:domain rpg:Prerequisite ;
+  rdfs:range  rpg:Tracker .
+
+rpg:trackerMinValue a owl:DatatypeProperty ;
+  rdfs:label "tracker min value"@en ;
+  rdfs:comment "Minimum currentValue required on the referenced tracker."@en ;
+  rdfs:domain rpg:Prerequisite ;
+  rdfs:range  xsd:decimal .
+
+rpg:trackerMaxValue a owl:DatatypeProperty ;
+  rdfs:label "tracker max value"@en ;
+  rdfs:comment "Maximum currentValue allowed on the referenced tracker."@en ;
+  rdfs:domain rpg:Prerequisite ;
+  rdfs:range  xsd:decimal .
+
+# 5) Requires tags (useful for broad gating: 'is undead', 'has invitation', etc.)
+rpg:requiresTag a owl:ObjectProperty ;
+  rdfs:label "requires tag"@en ;
+  rdfs:comment "Requires the target actor (or scoped entity) to have the given Tag."@en ;
+  rdfs:domain rpg:Prerequisite ;
+  rdfs:range  rpg:Tag .
+
+rpg:forbidsTag a owl:ObjectProperty ;
+  rdfs:label "forbids tag"@en ;
+  rdfs:comment "Requires the target actor (or scoped entity) not to have the given Tag."@en ;
+  rdfs:domain rpg:Prerequisite ;
+  rdfs:range  rpg:Tag .
+
+#################################################################
+# Attach prerequisites to scenes (and other things)
+#################################################################
+
+rpg:hasPrerequisite a owl:ObjectProperty ;
+  rdfs:label "has prerequisite"@en ;
+  rdfs:comment "Attaches one or more prerequisites to a resource, most commonly a Scene."@en ;
+  rdfs:domain owl:Thing ;
+  rdfs:range  rpg:Prerequisite .
+
+rpg:prerequisiteNotes a owl:DatatypeProperty ;
+  rdfs:label "prerequisite notes"@en ;
+  rdfs:comment "Human/LLM-facing explanation of the gating intent (useful when strict evaluation is not desired)."@en ;
+  rdfs:domain rpg:Prerequisite ;
+  rdfs:range  xsd:string .
+
 
 rpg:CoreRuleSet a rpg:RuleSetType ;
   schema:name "Core Rule Set"@en ;
@@ -1484,3 +1640,94 @@ rpg:HackRuleSet a rpg:RuleSetType ;
   rpg:termCode "HACK" ;
   rpg:icon "🧪" .
 
+
+rpg:Task a owl:Class ;
+  rdfs:label "Task"@en ;
+  rdfs:comment """
+A structured resolution action definition. In STA this is the core mechanic:
+roll a pool, compare to difficulty, generate momentum/complications, etc.
+Use Task to model what is being attempted in a ruleset-native way.
+"""@en ;
+  rdfs:subClassOf schema:DefinedTerm .
+
+rpg:taskDefinedInRuleSet a owl:ObjectProperty ;
+  rdfs:domain rpg:Task ;
+  rdfs:range  rpg:RuleSet ;
+  rdfs:subPropertyOf schema:inDefinedTermSet ;
+  rdfs:label "task defined in rule set"@en .
+
+rpg:difficulty a owl:DatatypeProperty ;
+  rdfs:domain rpg:Task ;
+  rdfs:range  xsd:nonNegativeInteger ;
+  rdfs:label "difficulty"@en ;
+  rdfs:comment "Nominal difficulty (STA: typically 0..5+)."@en .
+
+rpg:taskUsesRoll a owl:ObjectProperty ;
+  rdfs:domain rpg:Task ;
+  rdfs:range  rpg:Roll ;
+  rdfs:label "task uses roll"@en ;
+  rdfs:comment "Links a Task definition to its roll procedure definition."@en .
+
+
+rpg:GlobalTrackerInstance a owl:Class ;
+  rdfs:label "Global Tracker Instance"@en ;
+  rdfs:comment """
+A tracker instance owned by a non-Actor context (World/Session/Scene/RuleSet table state).
+Used for shared economies like Momentum (party) and Threat (GM), or mission clocks/resources.
+"""@en ;
+  rdfs:subClassOf
+    [ a owl:Restriction ; owl:onProperty rpg:ownedByContext ; owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ; owl:onClass owl:Thing ],
+    [ a owl:Restriction ; owl:onProperty rpg:forTracker ;      owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ; owl:onClass rpg:Tracker ] .
+
+rpg:ownedByContext a owl:ObjectProperty ;
+  rdfs:label "owned by context"@en ;
+  rdfs:comment "Ownership for shared/stateful trackers held by World/Session/Scene/etc."@en ;
+  rdfs:domain rpg:GlobalTrackerInstance ;
+  rdfs:range  owl:Thing .
+
+rpg:hasGlobalTracker a owl:ObjectProperty ;
+  rdfs:label "has global tracker"@en ;
+  rdfs:comment "Attach a global tracker instance to a context like a Session or World."@en ;
+  rdfs:domain owl:Thing ;
+  rdfs:range  rpg:GlobalTrackerInstance ;
+  owl:inverseOf rpg:ownedByContext .
+
+rpg:IdentityStatement a owl:Class ;
+  rdfs:label "Identity Statement"@en ;
+  rdfs:comment """
+A short declarative statement that drives behavior and can fuel mechanics.
+Perfect for STA Values and Directives, also usable for beliefs/instincts in other RPGs.
+"""@en ;
+  rdfs:subClassOf schema:CreativeWork .
+
+rpg:statementText a owl:DatatypeProperty ;
+  rdfs:domain rpg:IdentityStatement ;
+  rdfs:range  xsd:string ;
+  rdfs:label "statement text"@en .
+
+rpg:hasIdentityStatement a owl:ObjectProperty ;
+  rdfs:domain rpg:Character ;
+  rdfs:range  rpg:IdentityStatement ;
+  rdfs:label "has identity statement"@en ;
+  rdfs:comment "Attach Values/Directives-like statements to a character."@en .
+
+rpg:VehicleActor a owl:Class ;
+  rdfs:label "Vehicle Actor"@en ;
+  rdfs:comment "A vehicle treated as an actor with state (systems, shields, crew support, damage)."@en ;
+  rdfs:subClassOf rpg:Actor, schema:Vehicle .
+
+rpg:Complication a owl:Class ;
+  rdfs:label "Complication"@en ;
+  rdfs:comment "A state used to represent STA-style complications (scene, character, or ship)."@en ;
+  rdfs:subClassOf rpg:State .
+
+rpg:ExtendedTask a owl:Class ;
+  rdfs:label "Extended Task"@en ;
+  rdfs:comment "A clock-like structured challenge with progress, resistance, and breakthroughs (STA extended tasks)."@en ;
+  rdfs:subClassOf rpg:Clock .
+
+rpg:resistance a owl:DatatypeProperty ;
+  rdfs:domain rpg:ClockInstance ;
+  rdfs:range  xsd:nonNegativeInteger ;
+  rdfs:label "resistance"@en ;
+  rdfs:comment "Optional resistance value used by extended tasks (interpretation ruleset-specific)."@en .
