@@ -1,6 +1,16 @@
+import { useEffect, useState } from "react";
+import { Moon, Sun } from "lucide-react";
 import logo from "@/assets/rpg-schema-logo.png";
 
 const Header = () => {
+  const [dark, setDark] = useState(() =>
+    document.documentElement.classList.contains("dark")
+  );
+
+  useEffect(() => {
+    document.documentElement.classList.toggle("dark", dark);
+  }, [dark]);
+
   return (
     <header className="bg-gradient-parchment border-b border-border">
       <div className="container mx-auto px-4 py-4">
@@ -31,6 +41,13 @@ const Header = () => {
             >
               GitHub
             </a>
+            <button
+              onClick={() => setDark(!dark)}
+              className="p-2 rounded-lg hover:bg-secondary transition-colors text-foreground/80 hover:text-primary"
+              aria-label="Toggle dark mode"
+            >
+              {dark ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+            </button>
           </nav>
         </div>
       </div>
