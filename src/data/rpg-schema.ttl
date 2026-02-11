@@ -1731,3 +1731,105 @@ rpg:resistance a owl:DatatypeProperty ;
   rdfs:range  xsd:nonNegativeInteger ;
   rdfs:label "resistance"@en ;
   rdfs:comment "Optional resistance value used by extended tasks (interpretation ruleset-specific)."@en .
+
+#################################################################
+# RuleSet contributors (schema.org + FOAF)
+#################################################################
+
+# Convenience alias: use schema:contributor as the canonical predicate.
+# This is here mainly to keep your RPG vocabulary self-contained.
+rpg:contributor a owl:ObjectProperty ;
+  rdfs:label "contributor"@en ;
+  rdfs:comment """
+Alias for schema:contributor. Points to a Person/Organization who contributed to a RuleSet.
+Use schema:contributor directly if you prefer. This alias improves discoverability in RPG-focused graphs.
+"""@en ;
+  owl:equivalentProperty schema:contributor ;
+  rdfs:domain rpg:RuleSet ;
+  rdfs:range  foaf:Agent .
+
+rpg:author a owl:ObjectProperty ;
+  rdfs:label "author"@en ;
+  rdfs:comment "Alias for schema:author (often the primary creator/design author)."@en ;
+  owl:equivalentProperty schema:author ;
+  rdfs:domain rpg:RuleSet ;
+  rdfs:range  foaf:Agent .
+
+rpg:publisher a owl:ObjectProperty ;
+  rdfs:label "publisher"@en ;
+  rdfs:comment "Alias for schema:publisher."@en ;
+  owl:equivalentProperty schema:publisher ;
+  rdfs:domain rpg:RuleSet ;
+  rdfs:range  foaf:Agent .
+
+# FOAF-friendly convenience: who made the ruleset
+rpg:madeBy a owl:ObjectProperty ;
+  rdfs:label "made by"@en ;
+  rdfs:comment """
+FOAF-friendly link to the maker of a RuleSet. Equivalent to foaf:maker.
+Use when you want FOAF-native traversals without relying on schema.org predicates.
+"""@en ;
+  owl:equivalentProperty foaf:maker ;
+  rdfs:domain rpg:RuleSet ;
+  rdfs:range  foaf:Agent .
+
+#################################################################
+# Rich contribution metadata (optional but recommended)
+#################################################################
+
+rpg:Contribution a owl:Class ;
+  rdfs:label "Contribution"@en ;
+  rdfs:comment """
+A metadata-rich contribution record connecting a contributor to a RuleSet with a specific role.
+Use this when you need: role labels (designer, writer, editor), dates, URLs, notes, provenance.
+Modeled as schema:Role for interoperability.
+"""@en ;
+  rdfs:subClassOf schema:Role ,
+    [ a owl:Restriction ;
+      owl:onProperty rpg:contributionTo ;
+      owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+      owl:onClass rpg:RuleSet
+    ] ,
+    [ a owl:Restriction ;
+      owl:onProperty rpg:contributorAgent ;
+      owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+      owl:onClass foaf:Agent
+    ] .
+
+rpg:contributionTo a owl:ObjectProperty ;
+  rdfs:label "contribution to"@en ;
+  rdfs:comment "Which RuleSet this contribution record refers to."@en ;
+  rdfs:domain rpg:Contribution ;
+  rdfs:range  rpg:RuleSet .
+
+rpg:contributorAgent a owl:ObjectProperty ;
+  rdfs:label "contributor agent"@en ;
+  rdfs:comment "The contributing person/organization."@en ;
+  rdfs:domain rpg:Contribution ;
+  rdfs:range  foaf:Agent .
+
+rpg:ContributionRole a owl:Class ;
+  rdfs:label "Contribution Role"@en ;
+  rdfs:comment """
+A controlled vocabulary for contribution roles: designer, writer, editor, publisher, illustrator, developer, etc.
+Use schema:DefinedTerm so roles can be extended per community.
+"""@en ;
+  rdfs:subClassOf schema:DefinedTerm .
+
+rpg:contributionRole a owl:ObjectProperty ;
+  rdfs:label "contribution role"@en ;
+  rdfs:comment "Assigns a role term to a Contribution record."@en ;
+  rdfs:domain rpg:Contribution ;
+  rdfs:range  rpg:ContributionRole .
+
+rpg:contributionNotes a owl:DatatypeProperty ;
+  rdfs:label "contribution notes"@en ;
+  rdfs:comment "Human-readable notes about the contribution."@en ;
+  rdfs:domain rpg:Contribution ;
+  rdfs:range  xsd:string .
+
+rpg:hasContribution a owl:ObjectProperty ;
+  rdfs:label "has contribution"@en ;
+  rdfs:comment "Attaches contribution records to a RuleSet."@en ;
+  rdfs:domain rpg:RuleSet ;
+  rdfs:range  rpg:Contribution .
