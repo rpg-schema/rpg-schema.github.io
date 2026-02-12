@@ -67,9 +67,10 @@ const Footer = () => {
         </div>
         
         <div className="border-t border-parchment/20 pt-8 flex flex-col md:flex-row items-center justify-between gap-4">
-          <p className="text-parchment/50 text-sm">
-            © 2026 RPG-Schema.org. Open source under CC BY 4.0 license.
-          </p>
+          <div className="text-parchment/50 text-sm">
+            <p>© 2026 RPG-Schema.org. Open source under CC BY 4.0 license.</p>
+            <p className="mt-1">Made with ❤️ in Bologna by <a href="https://fantasymaps.org" target="_blank" rel="noopener noreferrer" className="hover:text-parchment transition-colors">Fantasymaps.org</a></p>
+          </div>
           <div className="flex items-center gap-6 text-sm">
             <a href="#" className="text-parchment/50 hover:text-parchment transition-colors">
               Privacy
